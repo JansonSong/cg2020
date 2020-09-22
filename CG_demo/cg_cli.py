@@ -63,7 +63,6 @@ if __name__ == '__main__':
                 point_list = []
                 for i in range(2, len(line) - 1, 2):
                     point_list.append([int(line[i]), int(line[i+1])])
-                print(point_list)
                 algorithm = line[-1]
                 item_dict[item_id] = ['polygon', point_list, algorithm, np.array(pen_color)]
             elif line[0] == 'drawEllipse':
