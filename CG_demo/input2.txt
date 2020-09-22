@@ -1,9 +1,0 @@
-resetCanvas 800 800
-# draw_polygon
-drawPolygon polygon1 115 493 685 493 115 307 400 700 685 307 DDA
-saveCanvas 2
-
-# draw_ellipse
-setColor 0 255 0
-drawEllipse ellipse1 200 500 600 300
-saveCanvas 2
