@@ -138,7 +138,36 @@ def draw_curve(p_list, algorithm):
     :param algorithm: (string) 绘制使用的算法，包括'Bezier'和'B-spline'（三次均匀B样条曲线，曲线不必经过首末控制点）
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 绘制结果的像素点坐标列表
     """
-    pass
+    result = []
+    n = len(p_list) - 1
+    def calculate_t(t, p_list):
+        coefficient_list = [0] * (n + 1)
+        # coefficient_list[0] = 1
+        coefficient_list[0] = 1 - t
+        coefficient_list[1] = t
+        tmp = 0
+        for r in range(2, n + 1):
+            for i in range(r + 1):
+                if i == 0:
+                    tmp = coefficient_list[0]
+                    coefficient_list[0] *= (1 - t)
+                else:
+                    tp = coefficient_list[i]
+                    coefficient_list[i] = (1 - t) * coefficient_list[i] + t * tmp
+                    tmp = tp
+
+        sumval = [0, 0]
+        for i in range(n + 1):
+            sumval[0] += coefficient_list[i] * p_list[i][0]
+            sumval[1] += coefficient_list[i] * p_list[i][1]
+        
+        return sumval
+    t = 0
+    while t <= 1:
+        x_t, y_t = calculate_t(t, p_list)
+        result.append((int(x_t), int(y_t)))
+        t += 0.001
+    return result
 
 
 def translate(p_list, dx, dy):
