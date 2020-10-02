@@ -26,46 +26,48 @@ def draw_line(p_list, algorithm):
             for x in range(x0, x1 + 1):
                 result.append((x, int(y0 + k * (x - x0))))
     elif algorithm == 'DDA':
+        if x1 == x0 and y1 == y0:
+            return [(x0, y0)]
         length = max(abs(x1 - x0), abs(y1 - y0))
         detax = (x1 - x0) / length
         detay = (y1 - y0) / length
         x = x0
         y = y0
         for i in range(length + 1):
-            result.append((int(x), int(y)))
+            result.append((round(x), round(y)))
             x = x + detax
             y = y + detay
     elif algorithm == 'Bresenham':
-        detax = abs(x1 - x0)
-        detay = abs(y1 - y0)
-        if detay > detax:
+        change = 0
+        if abs(x0 - x1) < abs(y0 - y1):
             x0, y0, x1, y1 = y0, x0, y1, x1
-            detax, detay = detay, detax
             change = 1
-        else:
-            change = 0
-        def Sign(x_1, x_2):
-            if x_1 < x_2:
-                return 1
-            elif x_1 == x_2:
-                return 0
+        if x0 > x1:
+            x0, y0, x1, y1 = x1, y1, x0, y0
+        detax, detay = x1 - x0, y1 - y0
+        signy = 1
+        if y1 == y0:
+            signy = 0
+        elif y0 > y1:
+            signy = -1
+        x, y = x0, y0
+        m = detay / detax
+        b = y0 - m * x0
+        c = 2*detay+detax*(2*b-signy)
+        p = 2*detay*x-2*detax*y+c
+        alpha = 2*detay-signy*2*detax
+        detay2 = 2*detay2
+        for i in range(abs(detax)+1):
+            if change == 0:
+                result.append((round(x), round(y)))
             else:
-                return -1
-        x = x0
-        y = y0
-        signx = Sign(x0, x1)
-        signy = Sign(y0, y1)
-        e = 2 * detay - detax
-        for i in range(1, detax + 1):
-            if change == 1:
-                result.append((int(y), int(x)))
-            else:
-                result.append((int(x), int(y)))
-            while e > 0:
+                result.append((round(y), round(x)))
+            x = x + 1
+            if p > 0:
                 y = y + signy
-                e = e - 2 * detax
-            x = x + signx
-            e = e + 2 * detay
+                p = signy*(p+alpha)
+            elif p <= 0:
+                p = signy*(p + detay2)
     return result
 
 
@@ -89,45 +91,55 @@ def draw_ellipse(p_list):
     :param p_list: (list of list of int: [[x0, y0], [x1, y1]]) 椭圆的矩形包围框左上角和右下角顶点坐标
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 绘制结果的像素点坐标列表
     """
+
     x0, y0 = p_list[0]
     x1, y1 = p_list[1]
     result = []
-    a = (x1 - x0) / 2
-    b = (y1 - y0) / 2
-    aa = a * a
-    bb = b * b
-    aabb = aa * bb
-    detax = (x1 + x0) / 2
-    detay = (y1 + y0) / 2
-    x = int(a)
-    y = 0
-    alpha = 2*bb*x*(x-1)+bb/2+2*aa-2*aabb
-    while bb*(x-1/2)>aa*(y+1):
-        result.append((int(x + detax), int(y + detay)))
-        result.append((int(-x + detax), int(y + detay)))
-        result.append((int(x + detax), int(-y + detay)))
-        result.append((int(-x + detax), int(-y + detay)))
-        if alpha < 0:
-            y = y + 1
-            alpha = alpha+4*aa*y+2*aa
+    change = 0
+    if abs(x1 - x0) < abs(y0 - y1):
+        x0, y0, x1, y1 = y0, x0, y1, x1
+        change = 1
+    deltax = (x1+x0)/2
+    deltay = (y1+y0)/2
+    a = abs(x1 - x0) / 2
+    b = abs(y1 - y0) / 2
+    aa, bb = a*a, b*b
+    toaa, tobb = 2*aa, 2*bb
+    thaa, thbb = 3*aa, 3*bb
+    x, y = 0, round(b)
+    p = bb-aa*b+aa/4
+    alpha = toaa + thbb
+    while aa*y >= bb*x:
+        m, n = x, y
+        if change == 1:
+            m, n = y, x
+        result.append((round(m+deltax), round(n+deltay)))
+        result.append((round(-m+deltax), round(n+deltay)))
+        result.append((round(m+deltax), round(-n+deltay)))
+        result.append((round(-m+deltax), round(-n+deltay)))
+        x = x + 1
+        if p < 0:
+            p = p+tobb*x+thbb
         else:
-            x = x - 1
-            y = y + 1
-            alpha = alpha-4*bb*x+4*aa*y+2*bb
-    
-    beta = bb*(2*x*x-4*x+2)+aa*(2*y*y+2*y+1/2)-2*aabb
-    while x >= 0:
-        result.append((int(x + detax), int(y + detay)))
-        result.append((int(-x + detax), int(y + detay)))
-        result.append((int(x + detax), int(-y + detay)))
-        result.append((int(-x + detax), int(-y + detay)))
-        if beta < 0:
-            x = x - 1
-            y = y + 1
-            beta = beta-4*bb*x+4*aa*y+2*bb
+            p = p+tobb*x-toaa*y+alpha
+            y = y - 1
+        
+    p = bb*(x+1/2)*(x+1/2)+aa*(y-1)*(y-1)-aa*bb
+    alpha = tobb + thaa
+    while y >= 0:
+        m, n = x, y
+        if change == 1:
+            m, n = y, x
+        result.append((round(m+deltax), round(n+deltay)))
+        result.append((round(-m+deltax), round(n+deltay)))
+        result.append((round(m+deltax), round(-n+deltay)))
+        result.append((round(-m+deltax), round(-n+deltay)))
+        y = y - 1
+        if p <= 0:
+            p = p+tobb*x-toaa*y+alpha
+            x = x + 1
         else:
-            x = x - 1
-            beta = beta-4*bb*x+2*bb
+            p = p-toaa*y+thaa
     return result
 
 
@@ -138,6 +150,19 @@ def draw_curve(p_list, algorithm):
     :param algorithm: (string) 绘制使用的算法，包括'Bezier'和'B-spline'（三次均匀B样条曲线，曲线不必经过首末控制点）
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 绘制结果的像素点坐标列表
     """
+    # result = []
+    # n = len(p_list) - 1
+    # u = 0
+    # while u <= 1:
+    #     tp_list = p_list.copy()
+    #     for r in range(n):
+    #         for i in range(n - r):
+    #             tp_list[i][0] = (1 - u)*tp_list[i][0] + u*tp_list[i+1][0]
+    #             tp_list[i][1] = (1 - u)*tp_list[i][1] + u*tp_list[i+1][1]
+    #     result.append((round(tp_list[0][0]), round(tp_list[0][1])))
+    #     u = u + 0.001
+
+
     result = []
     n = len(p_list) - 1
     def calculate_t(t, p_list):
