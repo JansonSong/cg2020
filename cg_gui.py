@@ -211,6 +211,12 @@ class MainWindow(QMainWindow):
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
 
+    def line_DDA_action(self):
+        self.canvas_widget.start_draw_line('DDA', self.get_id())
+        self.statusBar().showMessage('DDA算法绘制线段')
+        self.list_widget.clearSelection()
+        self.canvas_widget.clear_selection()
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

@@ -56,7 +56,7 @@ def draw_line(p_list, algorithm):
         c = 2*detay+detax*(2*b-signy)
         p = 2*detay*x-2*detax*y+c
         alpha = 2*detay-signy*2*detax
-        detay2 = 2*detay2
+        detay2 = 2*detay
         for i in range(abs(detax)+1):
             if change == 0:
                 result.append((round(x), round(y)))
