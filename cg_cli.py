@@ -34,19 +34,19 @@ if __name__ == '__main__':
                     if item_type == 'line':
                         pixels = alg.draw_line(p_list, algorithm)
                         for x, y in pixels:
-                            canvas[height - 1 - y, x] = color
+                            canvas[y, x] = color
                     elif item_type == 'polygon':
                         pixels = alg.draw_polygon(p_list, algorithm)
                         for x, y in pixels:
-                            canvas[height - 1 - y, x] = color
+                            canvas[y, x] = color
                     elif item_type == 'ellipse':
                         pixels = alg.draw_ellipse(p_list)
                         for x, y in pixels:
-                            canvas[height - 1 - y, x] = color
+                            canvas[y, x] = color
                     elif item_type == 'curve':
                         pixels = alg.draw_curve(p_list, algorithm)
                         for x, y in pixels:
-                            canvas[height - 1 - y, x] = color
+                            canvas[y, x] = color
                 Image.fromarray(canvas).save(os.path.join(output_dir, save_name + '.bmp'), 'bmp')
             elif line[0] == 'setColor':
                 pen_color[0] = int(line[1])
@@ -81,6 +81,44 @@ if __name__ == '__main__':
                     point_list.append([int(line[i]), int(line[i+1])])
                 algorithm = line[-1]
                 item_dict[item_id] = ['curve', point_list, algorithm, np.array(pen_color)]
+            elif line[0] == 'translate':
+                item_id = line[1]
+                dx = int(line[2])
+                dy = int(line[3])
+                _, p_list, _, _ = item_dict[item_id]
+                result_list = alg.translate(p_list, dx, dy)
+                item_dict[item_id][1] = result_list
+            elif line[0] == 'rotate':
+                item_id = line[1]
+                x = int(line[2])
+                y = int(line[3])
+                r = float(line[4])
+                _, p_list, _, _ = item_dict[item_id]
+                result_list = alg.rotate(p_list, x, y, r)
+                item_dict[item_id][1] = result_list
+            elif line[0] == 'scale':
+                item_id = line[1]
+                x = int(line[2])
+                y = int(line[3])
+                s = float(line[4])
+                _, p_list, _, _ = item_dict[item_id]
+                # TODO: just need to expand the control points? or whole points
+                result_list = alg.scale(p_list, x, y, s)
+                item_dict[item_id][1] = result_list
+            elif line[0] == 'clip':
+                item_id = line[1]
+                x_min = int(line[2])
+                y_min = int(line[3])
+                x_max = int(line[4])
+                y_max = int(line[5])
+                algorithm = line[-1]
+                _, p_list, _, _ = item_dict[item_id]
+                result_list = alg.clip(p_list, x_min, y_min, x_max, y_max, algorithm)
+                if result_list == None:
+                    del item_dict[item_id]
+                else:
+                    item_dict[item_id][1] = result_list
+
             ...
 
             line = fp.readline()
