@@ -99,6 +99,8 @@ def draw_ellipse(p_list):
     # TODO: this is a bit different from the test sample
     x0, y0 = p_list[0]
     x1, y1 = p_list[1]
+    if x0 == x1 or y0 == y1:
+        return []
     result = []
     change = 0
     if abs(x1 - x0) < abs(y0 - y1):
@@ -339,6 +341,8 @@ def clip(p_list, x_min, y_min, x_max, y_max, algorithm):
                 if r < 0:
                     continue
                 u2 = min(u2, r)
+        if u1 > u2:
+            return None
         x_1 = x1 + u1 * (x2 - x1)
         x_2 = x1 + u2 * (x2 - x1)
         y_1 = y1 + u1 * (y2 - y1)
