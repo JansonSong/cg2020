@@ -108,6 +108,8 @@ def draw_ellipse(p_list):
         change = 1
     deltax = (x1+x0)/2
     deltay = (y1+y0)/2
+    if change == 1:
+        deltax, deltay = deltay, deltax
     a = abs(x1 - x0) / 2
     b = abs(y1 - y0) / 2
     aa, bb = a*a, b*b
@@ -119,7 +121,7 @@ def draw_ellipse(p_list):
     while aa*y >= bb*x:
         m, n = x, y
         if change == 1:
-            m, n = y, x
+            m, n = y, x            
         result.append((round(m+deltax), round(n+deltay)))
         result.append((round(-m+deltax), round(n+deltay)))
         result.append((round(m+deltax), round(-n+deltay)))
