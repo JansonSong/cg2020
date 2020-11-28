@@ -60,9 +60,8 @@ class MyCanvas(QGraphicsView):
         self.temp_algorithm = algorithm
         self.temp_id = item_id
 
-    def translate_action(self, item_id):
+    def translate_action(self):
         self.status = 'translate'
-        self.temp_id = item_id
 
     def finish_draw(self):
         self.temp_id = self.main_window.get_id()
@@ -103,8 +102,15 @@ class MyCanvas(QGraphicsView):
             self.temp_item = MyItem(self.temp_id, self.status, [[x, y]], self.temp_algorithm, pen_color=self.pen_color)
             self.scene().addItem(self.temp_item)
         elif self.status == 'translate':
-            for item in self.scene().items:
+            temp_item = None
+            print(self.selected_id)
+            for item in self.scene().items():
                 print(item.id)
+                if item.id == self.selected_id:
+                    temp_item = item
+                    break
+            print(temp_item)
+            
         self.updateScene([self.sceneRect()])
         super().mousePressEvent(event)
 
@@ -401,7 +407,7 @@ class MainWindow(QMainWindow):
         self.canvas_widget.clear_selection()
 
     def translate_action(self):
-        self.canvas_widget.translate_action(self.get_id())
+        self.canvas_widget.translate_action()
         self.statusBar().showMessage('translate')
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
