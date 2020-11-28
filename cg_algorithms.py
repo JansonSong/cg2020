@@ -215,11 +215,12 @@ def translate(p_list, dx, dy):
     for coord in p_list:
         x = coord[0] + dx
         y = coord[1] + dy
-        result.append((round(x), round(y)))
+        result.append([round(x), round(y)])
     return result
 
 
 def rotate(p_list, x, y, r):
+
     """旋转变换（除椭圆外）
 
     :param p_list: (list of list of int: [[x0, y0], [x1, y1], [x2, y2], ...]) 图元参数
@@ -234,7 +235,7 @@ def rotate(p_list, x, y, r):
     for coord in p_list:
         xt = x + (coord[0] - x) * cosr - (coord[1] - y) * sinr
         yt = y + (coord[0] - x) * sinr + (coord[1] - y) * cosr
-        result.append((round(xt), round(yt)))
+        result.append([round(xt), round(yt)])
     return result
 
 
@@ -254,7 +255,7 @@ def scale(p_list, x, y, s):
     for coord in p_list:
         xt = s * coord[0] + dx0
         yt = s * coord[1] + dy0
-        result.append((round(xt), round(yt)))
+        result.append([round(xt), round(yt)])
     return result
 
 

@@ -18,6 +18,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QPainter, QMouseEvent, QColor
 from PyQt5.QtCore import QRectF, Qt
 from PyQt5.Qt import QPalette, QColorDialog, QPen
+import math
 
 
 class MyCanvas(QGraphicsView):
@@ -35,6 +36,10 @@ class MyCanvas(QGraphicsView):
         self.temp_algorithm = ''
         self.temp_id = ''
         self.temp_item = None
+        self.begin_postion = []
+        self.end_postion = []
+        self.begin_p_list = []
+        self.center_point = []
 
         self.pen_color = QColor(0, 0, 0)
 
@@ -62,6 +67,16 @@ class MyCanvas(QGraphicsView):
 
     def translate_action(self):
         self.status = 'translate'
+
+    def rotate_action(self):
+        self.status = 'rotate'
+
+    def scale_action(self):
+        self.status = 'scale'
+
+    def clip_action(self, algorithm):
+        self.status = 'clip'
+        self.temp_algorithm = algorithm
 
     def finish_draw(self):
         self.temp_id = self.main_window.get_id()
@@ -102,15 +117,47 @@ class MyCanvas(QGraphicsView):
             self.temp_item = MyItem(self.temp_id, self.status, [[x, y]], self.temp_algorithm, pen_color=self.pen_color)
             self.scene().addItem(self.temp_item)
         elif self.status == 'translate':
-            temp_item = None
-            print(self.selected_id)
+            self.temp_item = None
+            self.begin_postion = [x, y]
             for item in self.scene().items():
-                print(item.id)
                 if item.id == self.selected_id:
-                    temp_item = item
+                    self.temp_item = item
                     break
-            print(temp_item)
-            
+            self.begin_p_list = []
+            for point in self.temp_item.p_list:
+                self.begin_p_list.append(point.copy())
+        elif self.status == 'rotate':
+            self.temp_item = None
+            self.begin_postion = [x, y]
+
+            for item in self.scene().items():
+                if item.id == self.selected_id:
+                    self.temp_item = item
+                    break
+            rect = self.temp_item.boundingRect().getRect()
+            self.center_point = [rect[0] + rect[2] / 2, rect[1] + rect[3] / 2]
+            self.begin_p_list = []
+            for point in self.temp_item.p_list:
+                self.begin_p_list.append(point.copy())
+        elif self.status == 'scale':
+            self.temp_item = None
+            self.begin_postion = [x, y]
+            for item in self.scene().items():
+                if item.id == self.selected_id:
+                    self.temp_item = item
+                    break
+            rect = self.temp_item.boundingRect().getRect()
+            self.center_point = [rect[0] + rect[2] / 2, rect[1] + rect[3] / 2]
+            self.begin_p_list = []
+            for point in self.temp_item.p_list:
+                self.begin_p_list.append(point.copy())
+        elif self.status == 'clip':
+            self.temp_item = None
+            self.begin_postion = [x, y]
+            for item in self.scene().items():
+                if item.id == self.selected_id:
+                    self.temp_item = item
+                    break
         self.updateScene([self.sceneRect()])
         super().mousePressEvent(event)
 
@@ -127,6 +174,21 @@ class MyCanvas(QGraphicsView):
             self.temp_item.p_list[1] = [x, y]
         elif self.status == 'curve':
             self.temp_item.p_list.append([x, y])
+        elif self.status == 'translate':
+            self.temp_item.p_list = alg.translate(self.begin_p_list, x - self.begin_postion[0], y - self.begin_postion[1])
+        elif self.status == 'rotate':
+            a = math.sqrt((self.begin_postion[0] - self.center_point[0]) ** 2 + (self.begin_postion[1] - self.center_point[1]) ** 2)
+            b = math.sqrt((x - self.center_point[0]) ** 2 + (y - self.center_point[1]) ** 2)
+            c = math.sqrt((self.begin_postion[0] - x) ** 2 + (self.begin_postion[1] - y) ** 2)  
+            r = math.acos((a ** 2 + b ** 2 - c ** 2) / (2 * a * b)) / (2 * math.pi) * 360
+            self.temp_item.p_list = alg.rotate(self.begin_p_list, self.center_point[0], self.center_point[1], r)
+        elif self.status == 'scale':
+            a = math.sqrt((self.begin_postion[0] - self.center_point[0]) ** 2 + (self.begin_postion[1] - self.center_point[1]) ** 2)
+            b = math.sqrt((x - self.center_point[0]) ** 2 + (y - self.center_point[1]) ** 2)
+            s = b / a
+            self.temp_item.p_list = alg.scale(self.begin_p_list, self.center_point[0], self.center_point[1], s)
+        elif self.status == 'clip':
+            self.end_postion = [x, y]
         self.updateScene([self.sceneRect()])
         super().mouseMoveEvent(event)
 
@@ -148,6 +210,25 @@ class MyCanvas(QGraphicsView):
             self.list_widget.addItem(self.temp_id)
             self.finish_draw()
             self.temp_item = None
+        elif self.status == 'translate':
+            self.begin_p_list = []
+            for point in self.temp_item.p_list:
+                self.begin_p_list.append(point.copy())
+        elif self.status == 'rotate':
+            self.begin_p_list = []
+            for point in self.temp_item.p_list:
+                self.begin_p_list.append(point.copy())
+        elif self.status == 'scale':
+            self.begin_p_list = []
+            for point in self.temp_item.p_list:
+                self.begin_p_list.append(point.copy())
+        elif self.status == 'clip':
+            xmin = min(self.begin_postion[0], self.end_postion[0])
+            xmax = max(self.begin_postion[0], self.end_postion[0])
+            ymin = min(self.begin_postion[1], self.end_postion[1])
+            ymax = max(self.begin_postion[1], self.end_postion[1])
+            self.temp_item.p_list = alg.clip(self.temp_item.p_list, xmin, ymin, xmax, ymax, self.temp_algorithm)
+            self.updateScene([self.sceneRect()])
         super().mouseReleaseEvent(event)
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
@@ -186,6 +267,11 @@ class MyItem(QGraphicsItem):
             item_pixels = alg.draw_line(self.p_list, self.algorithm)
             for p in item_pixels:
                 painter.drawPoint(*p)
+            if self.selected:
+                pen = QPen(Qt.DashLine)
+                pen.setColor(QColor(255, 0, 0))
+                painter.setPen(pen)
+                painter.drawRect(self.boundingRect())  
         elif self.item_type == 'polygon':
             item_pixels = alg.draw_polygon(self.p_list, self.algorithm)
             for p in item_pixels:
@@ -409,20 +495,22 @@ class MainWindow(QMainWindow):
     def translate_action(self):
         self.canvas_widget.translate_action()
         self.statusBar().showMessage('translate')
-        self.list_widget.clearSelection()
-        self.canvas_widget.clear_selection()
 
     def rotate_action(self):
-        pass
+        self.canvas_widget.rotate_action()
+        self.statusBar().showMessage('rotate')
 
     def scale_action(self):
-        pass
+        self.canvas_widget.scale_action()
+        self.statusBar().showMessage('scale')
 
     def clip_cohen_sutherland_action(self):
-        pass
+        self.canvas_widget.clip_action('Cohen-Sutherland')
+        self.statusBar().showMessage('Cohen-Sutherland algorithm clip line')
 
     def clip_liang_barsky_action(self):
-        pass
+        self.canvas_widget.clip_action('Liang-Barsky')
+        self.statusBar().showMessage('Liang-Barsky algorithm clip line')
 
 
 
