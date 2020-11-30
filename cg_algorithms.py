@@ -314,7 +314,6 @@ def clip(p_list, x_min, y_min, x_max, y_max, algorithm):
                 u = max(u, (y_max - y2) / (y1 - y2))
             x2 = x2 + u * (x1 - x2)
             y2 = y2 + u * (y1 - y2)
-        # 怎么处理边界条件，即如果求出的边界是带有小数怎么办，四舍五入还是有其他方法去解决
         result.append([round(x1), round(y1)])
         result.append([round(x2), round(y2)])
     elif algorithm == 'Liang-Barsky':
