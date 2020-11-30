@@ -318,10 +318,10 @@ def clip(p_list, x_min, y_min, x_max, y_max, algorithm):
         result.append([round(x1), round(y1)])
         result.append([round(x2), round(y2)])
     elif algorithm == 'Liang-Barsky':
-        p = [0] * 5
-        q = [0] * 5
-        p[1] = p[2] = x2 - x1
-        p[3] = p[4] = y2 - y1
+        p, q = [0] * 5, [0] * 5
+        deltax, deltay = x2 - x1, y2 - y1
+        p[1], p[2] = -deltax, deltax
+        p[3], p[4] = -deltay, deltay
         q[1] = x1 - x_min
         q[2] = x_max - x1
         q[3] = y1 - y_min
@@ -333,16 +333,13 @@ def clip(p_list, x_min, y_min, x_max, y_max, algorithm):
         if p[3] == 0:
             if q[3] < 0 or q[4] < 0:
                 return None
-        # TODO: should consider more below
         for k in range(1, 5):
             r = 0
-            if p[k] < 0:
+            if p[k] < 0:                
                 r = q[k] / p[k]
                 u1 = max(u1, r)
             elif p[k] > 0:
                 r = q[k] / p[k]
-                if r < 0:
-                    continue
                 u2 = min(u2, r)
         if u1 > u2:
             return None

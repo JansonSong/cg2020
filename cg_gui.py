@@ -14,10 +14,10 @@ from PyQt5.QtWidgets import (
     QListWidget,
     QHBoxLayout,
     QWidget,
-    QStyleOptionGraphicsItem)
+    QStyleOptionGraphicsItem,)
 from PyQt5.QtGui import QPainter, QMouseEvent, QColor
 from PyQt5.QtCore import QRectF, Qt
-from PyQt5.Qt import QPalette, QColorDialog, QPen
+from PyQt5.Qt import QPalette, QColorDialog, QPen, QInputDialog, QFileDialog
 import math
 
 
@@ -40,6 +40,8 @@ class MyCanvas(QGraphicsView):
         self.end_postion = []
         self.begin_p_list = []
         self.center_point = []
+
+        self.clip_rect_item = None
 
         self.pen_color = QColor(0, 0, 0)
 
@@ -114,8 +116,11 @@ class MyCanvas(QGraphicsView):
             self.temp_item = MyItem(self.temp_id, self.status, [[x, y], [x, y]], self.temp_algorithm, pen_color=self.pen_color)
             self.scene().addItem(self.temp_item)
         elif self.status == 'curve':
-            self.temp_item = MyItem(self.temp_id, self.status, [[x, y]], self.temp_algorithm, pen_color=self.pen_color)
-            self.scene().addItem(self.temp_item)
+            if self.temp_item is None:
+                self.temp_item = MyItem(self.temp_id, self.status, [[x, y]], self.temp_algorithm, pen_color=self.pen_color)
+                self.scene().addItem(self.temp_item)
+            else:
+                self.temp_item.p_list.append([x, y])
         elif self.status == 'translate':
             self.temp_item = None
             self.begin_postion = [x, y]
@@ -152,6 +157,8 @@ class MyCanvas(QGraphicsView):
             for point in self.temp_item.p_list:
                 self.begin_p_list.append(point.copy())
         elif self.status == 'clip':
+            self.clip_rect_item = MyItem('clip', self.status, [[x, y], [x, y]], None, None)
+            self.scene().addItem(self.clip_rect_item)
             self.temp_item = None
             self.begin_postion = [x, y]
             for item in self.scene().items():
@@ -173,7 +180,7 @@ class MyCanvas(QGraphicsView):
         elif self.status == 'ellipse':
             self.temp_item.p_list[1] = [x, y]
         elif self.status == 'curve':
-            self.temp_item.p_list.append([x, y])
+            pass
         elif self.status == 'translate':
             self.temp_item.p_list = alg.translate(self.begin_p_list, x - self.begin_postion[0], y - self.begin_postion[1])
         elif self.status == 'rotate':
@@ -188,6 +195,7 @@ class MyCanvas(QGraphicsView):
             s = b / a
             self.temp_item.p_list = alg.scale(self.begin_p_list, self.center_point[0], self.center_point[1], s)
         elif self.status == 'clip':
+            self.clip_rect_item.p_list[1] = [x, y]
             self.end_postion = [x, y]
         self.updateScene([self.sceneRect()])
         super().mouseMoveEvent(event)
@@ -206,10 +214,11 @@ class MyCanvas(QGraphicsView):
             self.finish_draw()
             self.temp_item = None
         elif self.status == 'curve':
-            self.item_dict[self.temp_id] = self.temp_item
-            self.list_widget.addItem(self.temp_id)
-            self.finish_draw()
-            self.temp_item = None
+            # self.item_dict[self.temp_id] = self.temp_item
+            # self.list_widget.addItem(self.temp_id)
+            # self.finish_draw()
+            # self.temp_item = None
+            pass
         elif self.status == 'translate':
             self.begin_p_list = []
             for point in self.temp_item.p_list:
@@ -228,11 +237,17 @@ class MyCanvas(QGraphicsView):
             ymin = min(self.begin_postion[1], self.end_postion[1])
             ymax = max(self.begin_postion[1], self.end_postion[1])
             self.temp_item.p_list = alg.clip(self.temp_item.p_list, xmin, ymin, xmax, ymax, self.temp_algorithm)
+            self.scene().removeItem(self.clip_rect_item)
             self.updateScene([self.sceneRect()])
         super().mouseReleaseEvent(event)
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
         if self.status == 'polygon':
+            self.item_dict[self.temp_id] = self.temp_item
+            self.list_widget.addItem(self.temp_id)
+            self.finish_draw()
+            self.temp_item = None
+        elif self.status == 'curve':
             self.item_dict[self.temp_id] = self.temp_item
             self.list_widget.addItem(self.temp_id)
             self.finish_draw()
@@ -299,9 +314,14 @@ class MyItem(QGraphicsItem):
                 pen.setColor(QColor(255, 0, 0))
                 painter.setPen(pen)
                 painter.drawRect(self.boundingRect())
+        elif self.item_type == 'clip':
+            pen = QPen(Qt.DashLine)
+            pen.setColor(QColor(0, 0, 255))
+            painter.setPen(pen)
+            painter.drawRect(self.boundingRect())
 
     def boundingRect(self) -> QRectF:
-        if self.item_type == 'line':
+        if self.item_type == 'line' or self.item_type == 'clip':
             x0, y0 = self.p_list[0]
             x1, y1 = self.p_list[1]
             x = min(x0, x1)
@@ -309,7 +329,7 @@ class MyItem(QGraphicsItem):
             w = max(x0, x1) - x
             h = max(y0, y1) - y
             return QRectF(x - 1, y - 1, w + 2, h + 2)
-        elif self.item_type == 'polygon':
+        elif self.item_type == 'polygon' or self.item_type == 'curve':
             xmin, ymin = self.p_list[0]
             xmax, ymax = xmin, ymin
             for point in self.p_list:
@@ -328,18 +348,6 @@ class MyItem(QGraphicsItem):
             w = max(x0, x1) - x
             h = max(y0, y1) - y
             return QRectF(x - 1, y - 1, w + 2, h + 2)
-        elif self.item_type == 'curve':
-            xmin, ymin = self.p_list[0]
-            xmax, ymax = xmin, ymin
-            for point in self.p_list:
-                xmin = min(xmin, point[0])
-                ymin = min(ymin, point[1])
-                xmax = max(xmax, point[0])
-                ymax = max(ymax, point[1])
-            x, y = xmin, ymin
-            w, h = xmax - xmin, ymax - ymin
-            return QRectF(x - 1, y - 1, w + 2, h + 2)
-
 
 class MainWindow(QMainWindow):
     """
@@ -366,6 +374,7 @@ class MainWindow(QMainWindow):
         file_menu = menubar.addMenu('文件')
         set_pen_act = file_menu.addAction('设置画笔')
         reset_canvas_act = file_menu.addAction('重置画布')
+        save_canvas_act = file_menu.addAction('save image')
         exit_act = file_menu.addAction('退出')
         draw_menu = menubar.addMenu('绘制')
         line_menu = draw_menu.addMenu('线段')
@@ -390,6 +399,7 @@ class MainWindow(QMainWindow):
         # 连接信号和槽函数
         set_pen_act.triggered.connect(self.set_pen_action)
         reset_canvas_act.triggered.connect(self.reset_canvas_action)
+        save_canvas_act.triggered.connect(self.save_canvas_action)
 
         exit_act.triggered.connect(qApp.quit)
         line_naive_act.triggered.connect(self.line_naive_action)
@@ -425,70 +435,75 @@ class MainWindow(QMainWindow):
         self.item_cnt += 1
         return _id
 
-    def getColorByShow(self):
-        def func(col):
-            palette = QPalette()
-            palette.setColor(QPalette.Background,col)
-            self.setPalette(palette)
-
-        self.cd.colorSelected.connect(func)#发射的信号cd.colorSelected
-        self.cd.show()
-
     def set_pen_action(self):
-        QColorDialog.setCustomColor(3,QColor(10,60,200))
-        color = QColorDialog.getColor(QColorDialog.customColor(3),self,'选择颜色')
+        QColorDialog.setCustomColor(3, QColor(10, 60, 200))
+        color = QColorDialog.getColor(QColorDialog.customColor(3),self,'Select Color')
         self.canvas_widget.set_pen_color(color)
 
     def reset_canvas_action(self):
+        width, okPressed = QInputDialog.getInt(self, "Get Width", "Width:", 600, 600, 1000)
+        width = width if okPressed else 600
+        height, okPressed = QInputDialog.getInt(self, "Get Height", "Height:", 600, 600, 1000)
+        height = height if okPressed else 600
+
         self.item_cnt = 0
-        self.scene = QGraphicsScene(self)
+        self.scene.clear()
+        self.scene.setSceneRect(0, 0, width, height)
+        self.canvas_widget.setFixedSize(width, height)
+        self.list_widget.clear()
+        # self.scene = QGraphicsScene(self)
         self.canvas_widget = MyCanvas(self.scene, self)
+        self.canvas_widget.updateScene([self.canvas_widget.sceneRect()])
+
+    def save_canvas_action(self):
+        filePath, _ = QFileDialog.getSaveFileName(self, "Save Image", "", 
+                         "PNG(*.png);;JPEG(*.jpg *.jpeg);;All Files(*.*) ")
 
     def line_naive_action(self):
         self.canvas_widget.start_draw_line('Naive', self.get_id())
-        self.statusBar().showMessage('Naive算法绘制线段')
+        self.statusBar().showMessage('Naive draw line')
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
 
     def line_dda_action(self):
         self.canvas_widget.start_draw_line('DDA', self.get_id())
-        self.statusBar().showMessage('DDA算法绘制线段')
+        self.statusBar().showMessage('DDA draw line')
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
 
     def line_bresenham_action(self):
         self.canvas_widget.start_draw_line('Bresenham', self.get_id())
-        self.statusBar().showMessage('Bresenham算法绘制线段')
+        self.statusBar().showMessage('Bresenham draw line')
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
 
     def polygon_dda_action(self):
         self.canvas_widget.start_draw_polygon('DDA', self.get_id())
-        self.statusBar().showMessage('DDA算法绘制多边形')
+        self.statusBar().showMessage('DDA draw polygon')
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
 
     def polygon_bresenham_action(self):
         self.canvas_widget.start_draw_polygon('Bresenham', self.get_id())
-        self.statusBar().showMessage('Bresenham算法绘制多边形')
+        self.statusBar().showMessage('Bresenham draw polygon')
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
 
     def ellipse_action(self):
         self.canvas_widget.start_draw_ellipse(self.get_id())
-        self.statusBar().showMessage('绘制椭圆')
+        self.statusBar().showMessage('draw ellipse')
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
 
     def curve_bezier_action(self):
-        self.canvas_widget.start_draw_curve('Beizer', self.get_id())
-        self.statusBar().showMessage('Bezier算法绘制曲线')
+        self.canvas_widget.start_draw_curve('Bezier', self.get_id())
+        self.statusBar().showMessage('Bezier draw curve')
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
 
     def curve_b_spline_action(self):
         self.canvas_widget.start_draw_curve('B-spline', self.get_id())
-        self.statusBar().showMessage('B-spline算法绘制曲线')
+        self.statusBar().showMessage('B-spline draw curve')
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
 
