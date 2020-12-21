@@ -349,3 +349,13 @@ def clip(p_list, x_min, y_min, x_max, y_max, algorithm):
         result.append((round(x_1), round(y_1)))
         result.append((round(x_2), round(y_2)))
     return result
+
+
+def draw_curve_point(point):
+    result = []
+    for i in range(3):
+        for j in range(3):
+            dx = i - 1
+            dy = j - 1
+            result.append((round(point[0]) - dx, round(point[1]) - dy))
+    return result
