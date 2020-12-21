@@ -1,8 +1,0 @@
-resetCanvas 600 600
-setColor 0 255 0
-drawCurve curve1 105 105 351 85 512 163 472 284 388 372 228 368 185 313 Bezier
-
-drawCurve curve3 250 400 300 300 350 400 400 300 B-spline
-drawCurve curve4 250 200 300 50 350 250 400 100 450 200 B-spline
-
-saveCanvas 1
