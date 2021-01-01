@@ -8,6 +8,12 @@
 
 ![connectSucess](.\connectSucess.png)
 
+
+
+![Alt text](https://github.com/JansonSong/cg2020/blob/master/connectSucess.png)
+
+
+
 - \[2020/10/15 21:13\] 更新测试文本文件及参考结果图片
 
 ## Q&A
@@ -282,6 +288,6 @@ IDE/编辑器选择：
     >
     > 实现额外的图形学功能、重新设计更好的程序架构和交互逻辑等，能够提升给报告评分时的宽容度
 - 进度报告+系统报告+系统使用说明书：30分
-    
+  
     > 按时提交进度报告能够提升评分时的宽容度
 
