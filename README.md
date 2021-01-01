@@ -10,7 +10,7 @@
 
 
 
-![Alt text](https://github.com/JansonSong/cg2020/raw/master/connectSucess.png)
+![Alt text](https://sm.ms/image/TzAeqIMY3FRmkpU)
 
 - \[2020/10/15 21:13\] 更新测试文本文件及参考结果图片
 
