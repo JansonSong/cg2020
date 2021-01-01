@@ -10,9 +10,7 @@
 
 
 
-![Alt text](https://github.com/JansonSong/cg2020/blob/master/connectSucess.png)
-
-
+![Alt text](https://github.com/JansonSong/cg2020/raw/master/connectSucess.png)
 
 - \[2020/10/15 21:13\] 更新测试文本文件及参考结果图片
 
